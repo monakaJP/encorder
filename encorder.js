@@ -22,7 +22,7 @@
 // Implementation derived from TweetNaCl version 20140427.
 // See for details: http://tweetnacl.cr.yp.to/
 
-const converter = require("./node_modules/symbol-sdk/src/utils/converter")
+const converter = require("symbol-sdk/src/utils/converter")
 const sha512 = require('js-sha512');
 const crypto = require("crypto");
 const array = require("./RawArray").RawArray
