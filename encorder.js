@@ -900,7 +900,7 @@ function encode(senderPriv, recipientPub, msg, isHexString = false) {
     }
     // Processing
     const iv = crypto.randomBytes(12);
-    const encoded = _encode(senderPriv, recipientPub, isHexString ? msg : convert.utf8ToHex(msg), iv);
+    const encoded = _encode(senderPriv, recipientPub, isHexString ? msg : Buffer.from(msg).toString("hex").toUpperCase(), iv);
     // Result
     return encoded;
 }
@@ -911,7 +911,7 @@ function _encode(senderPriv, recipientPub, msg, iv) {
         throw new Error('Missing argument !');
     }
     // Processing
-    const keyPair = senderPriv.bytes;
+    const keyPair = converter.hexToUint8(senderPriv);
     const encKey = Buffer.from(deriveSharedKey(keyPair, converter.hexToUint8(recipientPub)), 32);
     const encIv = Buffer.from(iv);
     const cipher = crypto.createCipheriv("aes-256-gcm", encKey, encIv);
@@ -929,7 +929,6 @@ function clamp(d) {
 }
 
 function prepareForScalarMult(sk) {
-    console.log(sk);
     const d = new Uint8Array(64);
     const hash = sha512.arrayBuffer(sk);
     array.copy(d, array.uint8View(hash), 32);
