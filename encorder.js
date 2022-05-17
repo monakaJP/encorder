@@ -922,6 +922,43 @@ function _encode(senderPriv, recipientPub, msg, iv) {
     return result;
 }
 
+function decode(recipientPrivate, senderPublic, payload) {
+    // Error
+    if (!recipientPrivate || !senderPublic || !payload) {
+        throw new Error('Missing argument !');
+    }
+    // Processing
+    const binPayload = converter.hexToUint8(payload);
+    const payloadBuffer = new Uint8Array(binPayload.buffer, 16 + 12); //tag + iv
+    const tagAndIv = new Uint8Array(binPayload.buffer, 0, 16 + 12);
+    try {
+        const decoded = _decode(recipientPrivate, senderPublic, payloadBuffer, tagAndIv);
+        return Buffer.from(decoded, "hex").toString();
+    } catch {
+        // To return empty string rather than error throwing if authentication failed
+        return '';
+    }
+};
+
+
+function _decode(recipientPrivate, senderPublic, payload, tagAndIv) {
+    // Error
+    if (!recipientPrivate || !senderPublic || !payload) {
+        throw new Error('Missing argument !');
+    }
+    // Processing
+    const keyPair = converter.hexToUint8(recipientPrivate);
+    const encKey = Buffer.from(deriveSharedKey(keyPair, converter.hexToUint8(senderPublic)), 32);
+    const encIv = Buffer.from(new Uint8Array(tagAndIv.buffer, 16, 12));
+    const encTag = Buffer.from(new Uint8Array(tagAndIv.buffer, 0, 16));
+    const cipher = crypto.createDecipheriv("aes-256-gcm", encKey, encIv);
+    cipher.setAuthTag(encTag);
+    const decrypted = Buffer.concat([cipher.update(Buffer.from(payload)), cipher.final()]);
+    // Result
+    return decrypted.toString('hex');
+};
+
+
 function clamp(d) {
     d[0] &= 248;
     d[31] &= 127;
@@ -962,3 +999,4 @@ function deriveSharedSecret(privateKey, publicKey) {
 }
 
 module.exports.encode = encode;
+module.exports.decode = decode;
